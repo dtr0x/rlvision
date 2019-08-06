@@ -23,4 +23,4 @@ def localize(state, name):
         vis = vis_new
         if done:
             break
-    vis.save("drive/My Drive/visualization/{}.png".format(name))
+    vis.save("visualization/{}.png".format(name))

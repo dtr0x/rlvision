@@ -1,4 +1,10 @@
+from collections import namedtuple
+from torchvision import transforms
+import torch
+
 # data loading and preprocessing functions
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 State = namedtuple('State',
                         ('image', 'bbox_observed', 'bbox_true', 'action_history'))
@@ -15,7 +21,7 @@ def default_collate(batch):
         if isinstance(obj, list):
             bbox = obj[0]['bndbox']
         else:
-            bbox = obj['bndbox']     
+            bbox = obj['bndbox']
         left = int(bbox['xmin'])
         upper = int(bbox['ymin'])
         right = int(bbox['xmax'])

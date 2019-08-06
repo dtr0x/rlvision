@@ -1,5 +1,8 @@
 # Optimization
 
+from train import optimizer, memory
+import torch.nn.functional as F
+
 def get_last_action(state):
     last_action = state.action_history[:9]
     return last_action.nonzero().item()

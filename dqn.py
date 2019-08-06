@@ -1,3 +1,9 @@
+import torch.nn as nn
+from collections import namedtuple
+import torch
+import torchvision
+import random
+
 # define DQN with resnet preprocessing step
 
 class Net(nn.Module):
