@@ -1,6 +1,6 @@
-# Visualization
-
-from PIL import ImageDraw
+from PIL import Image, ImageDraw
+from dataloader import state_transform
+from reinforcement import take_action
 
 def draw_boxes(state):
     image = state.image.copy()
@@ -9,13 +9,13 @@ def draw_boxes(state):
     draw.rectangle(state.bbox_observed, outline=(0,255,255))
     return(image)
 
-def localize(state, name):
+def localize(state, img_name, net):
     vis = draw_boxes(state)
     w = state.image.width
     h = state.image.height
     for i in range(20):
         img_t, action_history = state_transform([state])
-        action = policy_net(img_t, action_history).max(1).indices[0].item()
+        action = net(img_t, action_history).max(1).indices[0].item()
         reward, state, done = take_action(state, action)
         vis_new = Image.new('RGB', (vis.width + w, h))
         vis_new.paste(vis)
@@ -23,4 +23,4 @@ def localize(state, name):
         vis = vis_new
         if done:
             break
-    vis.save("visualization/{}.png".format(name))
+    vis.save("visualization/{}.png".format(img_name))

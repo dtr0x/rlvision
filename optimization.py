@@ -1,16 +1,40 @@
-# Optimization
-
-from train import optimizer, memory
+import torch
 import torch.nn.functional as F
+from collections import namedtuple
+from dataloader import state_transform
+import random
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+Transition = namedtuple('Transition',
+                        ('state', 'action', 'next_state', 'reward'))
+
+class ReplayMemory(object):
+    def __init__(self, capacity):
+        self.capacity = capacity
+        self.memory = []
+        self.position = 0
+
+    def push(self, *args):
+        if len(self.memory) < self.capacity:
+            self.memory.append(None)
+        self.memory[self.position] = Transition(*args)
+        self.position = (self.position + 1) % self.capacity
+
+    def sample(self, batch_size):
+        return random.sample(self.memory, batch_size)
+
+    def __len__(self):
+        return len(self.memory)
 
 def get_last_action(state):
     last_action = state.action_history[:9]
     return last_action.nonzero().item()
 
-def optimize_model():
-    if len(memory) < BATCH_SIZE:
+def optimize_model(optimizer, memory, policy_net, target_net, batch_size, gamma):
+    if len(memory) < batch_size:
         return
-    transitions = memory.sample(BATCH_SIZE)
+    transitions = memory.sample(batch_size)
     batch = Transition(*zip(*transitions))
     
     non_final_mask = torch.tensor(tuple(map(lambda s: get_last_action(s) != 8,
@@ -28,10 +52,10 @@ def optimize_model():
 
     state_action_values = policy_net(img_t, action_history).gather(1, action_batch.view(-1, 1))
 
-    next_state_values = torch.zeros(BATCH_SIZE, device=device)
+    next_state_values = torch.zeros(batch_size, device=device)
     next_state_values[non_final_mask] = target_net(non_final_img_t, non_final_action_history).max(1)[0].detach()
 
-    expected_state_action_values = (next_state_values * GAMMA) + reward_batch
+    expected_state_action_values = (next_state_values * gamma) + reward_batch
     
     loss = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1))
 

@@ -1,12 +1,8 @@
-# Reinforcement learning actions/state updates
-
 import torch
 import numpy as np
 import cv2
 from dataloader import State
 import math
-
-n_actions = 9
 
 def calculate_iou(state):
     image, bbox_observed, bbox_true, action_history = state
@@ -50,34 +46,20 @@ def take_action(state, action):
     done = False
     
     if action == 0: #horizontal move to the right
-        #if x2 + alph_w > image.width:
-        #    alph_w = image.width - x2
         x1 += alph_w
         x2 = min(x2 + alph_w, image.width)
     elif action == 1: #horizontal move to the left
-        #if alph_w > x1:
-        #    alph_w = x1
         x1 = max(x1 - alph_w, 0)
         x2 -= alph_w
     elif action == 2: #vertical move up
-        #if alph_h > y1:
-        #    alph_h = y1
         y1 = max(y1 - alph_h, 0)
         y2 -= alph_h
     elif action == 3: #vertical move down
-        #if y2 + alph_h > image.height:
-        #    alph_h = image.height - y2
         y1 += alph_h
         y2 = min(y2 + alph_h, image.height)
     elif action == 4: #scale up
-        #max_x_oob = max(alph_w - x1, x2 + alph_w - image.width)
-        #if max_x_oob > 0:
-        #    alph_w -= max_x_oob
         x1 = max(x1 - math.floor(alph_w/2), 0)
         x2 = min(x2 + math.floor(alph_w/2), image.width)
-        #max_y_oob = max(alph_h - y1, y2 + alph_h - image.height)
-        #if max_y_oob > 0:
-        #    alph_h -= max_y_oob
         y1 = max(y1 - math.floor(alph_h/2), 0)
         y2 = min(y2 + math.floor(alph_h/2), image.height)
     elif action == 5: #scale down
@@ -114,7 +96,7 @@ def take_action(state, action):
 def find_positive_actions(state):
     image, bbox_observed, bbox_true, action_history = state
     positive_actions = []
-    for i in range(n_actions):
+    for i in range(9):
         reward, next_state, done = take_action(state, i)
         if reward > 0:
             positive_actions.append(i)

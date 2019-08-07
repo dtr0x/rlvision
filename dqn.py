@@ -1,14 +1,11 @@
-import torch.nn as nn
-from collections import namedtuple
 import torch
+import torch.nn as nn
 import torchvision
-import random
 
-# define DQN with resnet preprocessing step
-
-class Net(nn.Module):
+# DQN with resnet preprocessing step
+class DQN(nn.Module):
     def __init__(self):
-        super(Net, self).__init__()
+        super(DQN, self).__init__()
         
         # pre-trained convolutional network
         conv = torchvision.models.resnet50(pretrained=True)
@@ -33,28 +30,3 @@ class Net(nn.Module):
         out = torch.cat((out, action_history), dim=1)
         out = self.dqn(out)
         return out
-
-# define replay memory
-
-Transition = namedtuple('Transition',
-                        ('state', 'action', 'next_state', 'reward'))
-
-class ReplayMemory(object):
-
-    def __init__(self, capacity):
-        self.capacity = capacity
-        self.memory = []
-        self.position = 0
-
-    def push(self, *args):
-        """Saves a transition."""
-        if len(self.memory) < self.capacity:
-            self.memory.append(None)
-        self.memory[self.position] = Transition(*args)
-        self.position = (self.position + 1) % self.capacity
-
-    def sample(self, batch_size):
-        return random.sample(self.memory, batch_size)
-
-    def __len__(self):
-        return len(self.memory)

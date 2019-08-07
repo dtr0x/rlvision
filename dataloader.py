@@ -1,8 +1,6 @@
+import torch
 from collections import namedtuple
 from torchvision import transforms
-import torch
-
-# data loading and preprocessing functions
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -44,3 +42,5 @@ def state_transform(states):
     img_t = torch.stack([transform(img) for img in img_observed]).to(device)
     action_history = torch.stack([state.action_history for state in states]).to(device)
     return img_t, action_history
+
+
