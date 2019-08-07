@@ -1,3 +1,4 @@
 VOC2012/
 __pycache__/
 visualization/
+test*
