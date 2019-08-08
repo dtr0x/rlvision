@@ -1,4 +1,5 @@
 VOC2012/
 __pycache__/
 visualization/
-test*
+test.png
+planes
