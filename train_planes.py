@@ -7,13 +7,15 @@ from PlaneDetection import PlaneDetection
 import time, math, random
 
 # Hyperparameters / utilities
-BATCH_SIZE = 30
-NUM_EPOCHS = 50
+BATCH_SIZE = 128
+NUM_EPOCHS = 500
 GAMMA = 0.999
 EPS_START = 0.9
-EPS_END = 0.05
-EPS_DECAY = 200
+EPS_END = 0.1
+EPS_LEN = 200 # number of epochs to decay epsilon
 TARGET_UPDATE = 10
+
+eps_sched = np.linspace(EPS_START, EPS_END, EPS_LEN)
 
 # networks
 policy_net = DQN().to(device)
@@ -21,31 +23,16 @@ target_net = DQN().to(device)
 target_net.load_state_dict(policy_net.state_dict())
 target_net.eval()
 
-# optimizer / memory
-optimizer = torch.optim.Adam(policy_net.parameters(), lr=1e-4)
-memory = ReplayMemory(10000)
-
-# datasets
-VOCtrain = PlaneDetection('train')
-VOCtest = PlaneDetection('val')
-train_loader = torch.utils.data.DataLoader(VOCtrain, batch_size=BATCH_SIZE, collate_fn=default_collate)
-test_loader = torch.utils.data.DataLoader(VOCtest, batch_size=1, collate_fn=default_collate)
-test_iter = enumerate(test_loader)
-
-_, [s_fixed] = test_iter.__next__()
-
-steps_done = 0
-
-def select_action(img_t, action_history, states):
-    global steps_done
+def select_action(states, eps):
+    img_t, action_history = state_transform(states)
     sample = random.random()
-    eps_threshold = EPS_END + (EPS_START - EPS_END) * math.exp(-1. * steps_done / EPS_DECAY)
-    steps_done += 1
-    if sample > eps_threshold:
+    if sample > eps:
         # select best action from model with probability 1-epsilon
         with torch.no_grad():
             actions = policy_net(img_t, action_history)
-            return torch.max(actions, 1).indices
+            actions = torch.max(actions, 1).indices
+            print("q-network:", actions)
+            return actions
     else:
         # select random positive action with probability epsilon
         actions = []
@@ -56,20 +43,37 @@ def select_action(img_t, action_history, states):
             else:
                 action = random.randrange(9)
             actions.append(action)
-        return torch.tensor(actions, device=device)
+        actions = torch.tensor(actions, device=device)
+        print("random:", actions)
+        return actions
+
+# optimizer / memory
+optimizer = torch.optim.Adam(policy_net.parameters(), lr=1e-4)
+memory = ReplayMemory(10000)
+
+# training data
+VOCtrain = PlaneDetection('train')
+train_loader = torch.utils.data.DataLoader(VOCtrain, batch_size=TARGET_UPDATE, collate_fn=default_collate)
+
+# test data for visualization
+VOCtest = PlaneDetection('val')
+test_loader = torch.utils.data.DataLoader(VOCtest, batch_size=TARGET_UPDATE, collate_fn=default_collate)
+test_iter = enumerate(test_loader)
+_, test_images = next(test_iter)
 
 total_time = 0
-print("First 10 DQN params (initialization):", policy_net.state_dict()['dqn.0.weight'][0][:10])
-for epoch in range(NUM_EPOCHS):
+for i_epoch in range(NUM_EPOCHS):
     epoch_start = time.time()
-    for i, states in enumerate(train_loader):
-        print("Running batch", i)
+    eps = eps_sched[i_epoch]
+    for i_batch, states in enumerate(train_loader):
+        print("Running batch {0} of epoch {1}...".format(i_batch, i_epoch))
         batch_steps = 0
         start = time.time()
-        while len(states) > 0 and batch_steps < 100:
-            img_t, action_history = state_transform(states)
-            actions = select_action(img_t, action_history, states)
+        # perform actions on batch items until done
+        while len(states) > 0 and batch_steps < 40:
+            actions = select_action(states, eps)
             states_new = []
+            # store state transition for each each (state, action) pair
             for j in range(actions.shape[0]):
                 action = actions[j].item()
                 state = states[j]
@@ -78,27 +82,29 @@ for epoch in range(NUM_EPOCHS):
                 memory.push(state, action, next_state, reward)
                 if not done:
                     states_new.append(next_state)
-    
+            # optimize after each action on the batch
             optimize_model(optimizer, memory, policy_net, target_net, BATCH_SIZE, GAMMA)
-            
-            if batch_steps % TARGET_UPDATE == 0:
-                target_net.load_state_dict(policy_net.state_dict())
-                
-            states = states_new
             batch_steps+=1
-        
-        # save visualization
-        _, [s] = test_iter.__next__()
-        localize(s_fixed, "fixed/img_{0}-{1}".format(epoch, i), target_net)
-        localize(s, "img_{0}-{1}".format(epoch, i), target_net)
-        
+            states = states_new
+        # update target network after batch
+        target_net.load_state_dict(policy_net.state_dict())
+       
         stop = time.time()
         t = (stop-start)/60
-        total_time += t
-        print("Finished batch {0} in {1:.2f} minutes.".format(i, t))
-        print("Total time: {0:.2f} minutes.".format(total_time))
-        print("First 10 DQN params after batch {0}:".format(i), policy_net.state_dict()['dqn.0.weight'][0][:10])
+        print("Finished batch {0} in {1:.2f} minutes.".format(i_batch, t))
     
     t = (time.time() - epoch_start)/60
-    print("Finished epoch {0} in {1:.2f} minutes.".format(epoch, t))
-    torch.save(target_net, "models/target_net_{}.pt".format(epoch))
+    print("Finished epoch {0} in {1:.2f} minutes.".format(i_epoch, t))
+
+    total_time += t
+    print("Total time: {0:.2f} minutes.".format(total_time))
+
+    # save model after each epoch
+    torch.save(target_net, "models/target_net_{}.pt".format(i_epoch))
+
+    # save visualization after each epoch
+    c = 0
+    for img in test_images:
+        action_sequence = localize(img, "img_{0}_{1}".format(i_epoch, c), target_net)
+        print("Action sequence taken for test image {}: ".format(c), action_sequence)
+        c += 1
