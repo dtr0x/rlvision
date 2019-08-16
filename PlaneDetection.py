@@ -2,7 +2,7 @@ from dataloader import *
 from torch.utils.data import Dataset
 import torchvision
 
-# Plane images from VOC2012 with a bounding box size <= 20% of whole image
+# Plane images from VOC2012
 
 def get_bbox_percentage(item):
     obj = item[1]['annotation']['object']
@@ -27,7 +27,7 @@ class PlaneDetection(Dataset):
         self.plane_data = []
         for item in VOC:
             ap = get_bbox_percentage(item)
-            if ap is not None and ap <= 0.2:
+            if ap is not None and ap <= 0.5:
                 self.plane_data.append(item)
 
     def __getitem__(self, index):

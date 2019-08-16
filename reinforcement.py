@@ -94,10 +94,20 @@ def take_action(state, action):
     return reward, next_state, done
 
 def find_positive_actions(state):
-    image, bbox_observed, bbox_true, action_history = state
     positive_actions = []
     for i in range(9):
         reward, next_state, done = take_action(state, i)
         if reward > 0:
             positive_actions.append(i)
     return positive_actions
+
+def find_best_actions(state):
+    iou_diff = []
+    if calculate_iou(state) >= 0.6:
+        return [8]
+    for i in range(8):
+        reward, next_state, done = take_action(state, i)
+        iou_old = calculate_iou(state)
+        iou_new = calculate_iou(next_state)
+        iou_diff.append(iou_new - iou_old)
+    return np.argwhere(iou_diff == np.max(iou_diff)).flatten().tolist()
