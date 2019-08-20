@@ -4,3 +4,5 @@ visualization/
 test.png
 planes
 models
+plots
+train.out
