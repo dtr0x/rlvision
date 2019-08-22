@@ -25,7 +25,6 @@ def localize(state, net):
 def precision_and_recall(net):
     tp = 0
     fp = 0
-    fn = 0
     actions_hist = []
     for i, [s] in enumerate(test_loader):
         n_actions, iou = localize(s, net)
@@ -35,16 +34,13 @@ def precision_and_recall(net):
                  tp += 1
             else:
                 fp +=1
-        else:
-            fn +=1
+                
     if tp > 0 or fp > 0:
         precision = tp/(tp+fp)
     else:
         precision = 0
-    if tp > 0 or fn > 0:
-        recall = tp/(tp+fn)
-    else:
-        recall = 0
+
+    recall = tp/len(VOCtest) # all training examples have a detectable object
     return {'p': precision, 'r': recall, 'actions_hist': actions_hist}
 
 def main():
@@ -52,10 +48,11 @@ def main():
     recall = []
     model_path = "models"
     n_models = len(os.listdir(model_path))
-    for i in range(48, 52):
+    for i in range(n_models):
         print("Evaluating model {}...".format(i))
         model = os.path.join(model_path, "target_net_{}.pt".format(i))
         net = torch.load(model).to(device)
+        net.eval()
         pr = precision_and_recall(net)
         precision.append(pr['p'])
         recall.append(pr['r'])
@@ -75,3 +72,6 @@ def main():
     plt.legend(labels = ["Precision", "Recall"])
     plt.savefig(os.path.join("plots", "precision_recall.png"), bbox_inches="tight")
     plt.clf()
+
+if __name__ == "__main__":
+	main()
