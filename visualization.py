@@ -35,6 +35,25 @@ def localize(state, img_name, net):
     vis.save("visualization/{}.png".format(img_name))
     return action_sequence
 
+def localize2(state, max_n_actions, net):
+    action_sequence = []
+    vis = draw_boxes(state)
+    w = state.image.width
+    h = state.image.height
+    done = False
+    for i in range(max_n_actions):
+        img_t, action_history = state_transform([state])
+        action = net(img_t, action_history).max(1).indices[0].item()
+        action_sequence.append(action)
+        reward, state, done = take_action(state, action)
+        vis_new = Image.new('RGB', (vis.width + w, h))
+        vis_new.paste(vis)
+        vis_new.paste(draw_boxes(state), (vis.width, 0))
+        vis = vis_new
+        if done:
+            break
+    return vis, action_sequence
+
 def draw_action_sequence(state, action_sequence, img_name):
     vis = draw_boxes(state)
     print("IOU:", calculate_iou(state))
