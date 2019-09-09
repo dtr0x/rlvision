@@ -64,7 +64,10 @@ _, test_images = next(test_iter)
 total_time = 0
 for i_epoch in range(NUM_EPOCHS):
     epoch_start = time.time()
-    eps = eps_sched[i_epoch]
+    if i_epoch < EPS_LEN:
+        eps = eps_sched[i_epoch]
+    else:
+        eps = EPS_END
     for i_batch, states in enumerate(train_loader):
         print("Running batch {0} of epoch {1}...".format(i_batch, i_epoch))
         batch_steps = 0

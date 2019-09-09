@@ -1,8 +1,9 @@
 VOC2012/
 __pycache__/
 visualization/
-test.png
-planes
 models
 plots
-train.out
+*.out 
+*.png 
+*models* 
+*.npz

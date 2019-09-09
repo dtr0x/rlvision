@@ -3,6 +3,7 @@ from optimization import *
 from dataloader import *
 from reinforcement import *
 import time, math, random
+from itertools import count
 
 # Hyperparameters / utilities
 BATCH_SIZE = 128
@@ -16,7 +17,7 @@ TARGET_UPDATE = 10
 eps_sched = np.linspace(EPS_START, EPS_END, EPS_LEN)
 
 # networks
-policy_net = DQN().to(device)
+policy_net = torch.load("models/target_net_14.pt").to(device)
 target_net = DQN().to(device)
 target_net.load_state_dict(policy_net.state_dict())
 target_net.eval()
@@ -53,10 +54,32 @@ memory = ReplayMemory(10000)
 VOCtrain = torchvision.datasets.VOCDetection("VOC2012", image_set='train')
 train_loader = torch.utils.data.DataLoader(VOCtrain, batch_size=TARGET_UPDATE, collate_fn=default_collate)
 
+eps = 0.1
+for i_batch, states in enumerate(train_loader):
+    batch_steps = 0
+    print("Populating replay memory, round {}...".format(i_batch))
+    while len(states) > 0 and batch_steps < 40:
+        actions = select_action(states, eps)
+        states_new = []
+        # store state transition for each each (state, action) pair
+        for j in range(actions.shape[0]):
+            action = actions[j].item()
+            state = states[j]
+            reward, next_state, done = take_action(state, action)
+            reward = torch.tensor([reward], device=device)
+            memory.push(state, action, next_state, reward)
+            if not done:
+                states_new.append(next_state)
+        batch_steps+=1
+        states = states_new
+
 total_time = 0
-for i_epoch in range(NUM_EPOCHS):
+for i_epoch in count(15):
     epoch_start = time.time()
-    eps = eps_sched[i_epoch]
+    if i_epoch < EPS_LEN:
+        eps = eps_sched[i_epoch]
+    else:
+        eps = EPS_END
     for i_batch, states in enumerate(train_loader):
         print("Running batch {0} of epoch {1}...".format(i_batch, i_epoch))
         batch_steps = 0
