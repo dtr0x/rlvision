@@ -121,7 +121,7 @@ def take_action(state, action):
         x2 -= math.floor(alph_w/2)
 
     if action == 8: # trigger 
-        if calculate_max_iou >= 0.6:
+        if calculate_max_iou(state) >= 0.6:
             reward = 3.0
         else:
             reward = -3.0
