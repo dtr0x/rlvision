@@ -4,8 +4,16 @@ from torchvision import transforms
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+# State tuple:
+    # image: PIL image to perform actions
+    # bbox_observed: 4-tuple, currently observed bounding box
+    # bboxes_ true: 4-tuples of ground truth bounding boxes (contain the objects)
+    # action_history: 10x9 array, one-hot encoded actions vector (last 10 actions)
+    # n_trigger: number of times the agent used the trigger action on this image
+    # start_pos: integer indicating which corner the search should be restarted
 State = namedtuple('State',
-                        ('image', 'bbox_observed', 'bbox_true', 'action_history'))
+                        ('image', 'bbox_observed', 'bboxes_true', 'action_history',
+                            'n_trigger', 'start_pos'))
 
 def default_collate(batch):
     states = []
@@ -15,17 +23,18 @@ def default_collate(batch):
         w = int(item[1]['annotation']['size']['width'])
         h = int(item[1]['annotation']['size']['height'])
         bbox_observed = (0, 0, w, h)
-        obj = item[1]['annotation']['object']
-        if isinstance(obj, list):
-            bbox = obj[0]['bndbox']
-        else:
+        objs = item[1]['annotation']['object']
+        if not isinstance(objs, list):
+            objs = [objs]
+        bboxes_true = []
+        for obj in objs:
             bbox = obj['bndbox']
-        left = int(bbox['xmin'])
-        upper = int(bbox['ymin'])
-        right = int(bbox['xmax'])
-        lower = int(bbox['ymax'])
-        bbox_true = (left, upper, right, lower)
-        states.append(State(image, bbox_observed, bbox_true, action_history))
+            left = int(bbox['xmin'])
+            upper = int(bbox['ymin'])
+            right = int(bbox['xmax'])
+            lower = int(bbox['ymax'])
+            bboxes_true.append((left, upper, right, lower))
+        states.append(State(image, bbox_observed, bboxes_true, action_history, 0, 0))
     return states
 
 transform = transforms.Compose([

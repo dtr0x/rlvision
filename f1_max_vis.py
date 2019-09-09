@@ -1,12 +1,11 @@
 import numpy as np
-import torch
+import torch, torchvision
 import matplotlib.pyplot as plt
 from visualization import *
 from dataloader import *
 import os
-from PlaneDetection import PlaneDetection
 
-pr = np.load('precision_and_recall.npz')
+pr = np.load('precision_and_recall_all.npz')
 p = pr['precision']
 r = pr['recall']
 
@@ -22,9 +21,9 @@ plt.clf()
 
 best_model_idx = np.argmax(f1score)
 best_model = \
-torch.load("plane_models/target_net_{}.pt".format(best_model_idx)).to(device)
+torch.load("models/target_net_{}.pt".format(best_model_idx)).to(device)
 
-VOCtest = PlaneDetection('val')
+VOCtest = torchvision.datasets.VOCDetection("VOC2012", image_set='val')
 test_loader = torch.utils.data.DataLoader(VOCtest, batch_size=1, collate_fn=default_collate)
 
 n_items = len(VOCtest)

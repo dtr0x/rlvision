@@ -2,11 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from dataloader import *
 from reinforcement import take_action, calculate_iou
-from PlaneDetection import PlaneDetection
 import os
+import torchvision
 
-VOCtest = PlaneDetection('val')
-test_loader = torch.utils.data.DataLoader(VOCtest, batch_size=1, collate_fn=default_collate)
+VOCtest = torchvision.datasets.VOCDetection("VOC2012", image_set='val')
+test_loader = torch.utils.data.DataLoader(VOCtest, batch_size=1, collate_fn=default_collate, shuffle=True)
 
 def localize(state, net):
     n_actions = 0
@@ -34,13 +34,12 @@ def precision_and_recall(net):
                  tp += 1
             else:
                 fp +=1
-                
     if tp > 0 or fp > 0:
         precision = tp/(tp+fp)
     else:
         precision = 0
 
-    recall = tp/len(VOCtest) # all training examples have a detectable object
+    recall = tp/len(test_loader) # all training examples have a detectable object
     return {'p': precision, 'r': recall, 'actions_hist': actions_hist}
 
 def main():
@@ -56,13 +55,12 @@ def main():
         pr = precision_and_recall(net)
         precision.append(pr['p'])
         recall.append(pr['r'])
-        if i > 0 and i % 10 == 0:
-            plt.hist(pr['actions_hist'], bins=range(101), edgecolor='black', linewidth=1)
-            plt.xlabel("Number of actions")
-            plt.ylabel("Frequency")
-            plt.title("Number of Actions Taken On Test Images (Epoch {})".format(i))
-            plt.savefig(os.path.join("plots", "hist_epoch_{}.png".format(i)), bbox_inches="tight")
-            plt.clf()
+        plt.hist(pr['actions_hist'], bins=range(101), edgecolor='black', linewidth=1)
+        plt.xlabel("Number of actions")
+        plt.ylabel("Frequency")
+        plt.title("Number of Actions Taken On Test Images (Epoch {})".format(i))
+        plt.savefig(os.path.join("plots", "hist_epoch_{}.png".format(i)), bbox_inches="tight")
+        plt.clf()
     np.savez("precision_and_recall.npz", precision=precision, recall=recall)
     plt.plot(precision)
     plt.plot(recall)
