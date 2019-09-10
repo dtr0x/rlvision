@@ -55,7 +55,7 @@ def calculate_max_iou(state):
     x1, y1, x2, y2 = bbox_observed
     img_mask[y1:y2, x1:x2] = 1.0
 
-    max_iou = 0
+    max_iou = 0.0
     for gt_bbox in bboxes_true:
         gt_mask = np.zeros((image.height, image.width))
         x1, y1, x2, y2 = gt_bbox
