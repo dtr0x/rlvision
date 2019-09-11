@@ -16,10 +16,7 @@ def default_collate(batch):
         h = int(item[1]['annotation']['size']['height'])
         bbox_observed = (0, 0, w, h)
         obj = item[1]['annotation']['object']
-        if isinstance(obj, list):
-            bbox = obj[0]['bndbox']
-        else:
-            bbox = obj['bndbox']
+        bbox = obj['bndbox']
         left = int(bbox['xmin'])
         upper = int(bbox['ymin'])
         right = int(bbox['xmax'])

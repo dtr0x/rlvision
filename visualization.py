@@ -52,7 +52,8 @@ def localize2(state, max_n_actions, net):
         vis = vis_new
         if done:
             break
-    return vis, action_sequence
+    iou = calculate_iou(state)
+    return vis, action_sequence, iou
 
 def draw_action_sequence(state, action_sequence, img_name):
     vis = draw_boxes(state)
