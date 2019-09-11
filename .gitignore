@@ -5,5 +5,4 @@ models
 plots
 *.out 
 *.png 
-*models* 
 *.npz
