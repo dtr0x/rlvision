@@ -2,11 +2,29 @@ import numpy as np
 import matplotlib.pyplot as plt
 from dataloader import *
 from reinforcement import take_action, calculate_iou
-from PlaneDetection import PlaneDetection
-import os
+from SingleClassDetection import *
+import os, sys
 
-VOCtest = PlaneDetection('val')
-test_loader = torch.utils.data.DataLoader(VOCtest, batch_size=1, collate_fn=default_collate)
+voc_classes = {}
+f = open("voc_classes.txt", "r")
+lines = f.readlines()
+for l in lines:
+    k,v = l.split(',')
+    voc_classes[k] = int(v)
+
+try:
+    class_name = sys.argv[1]
+    if class_name not in voc_classes.keys():
+        raise IndexError()
+except IndexError:
+    print("Must provide class name from one of:")
+    print("\n".join(voc_classes.keys()))
+    exit()
+
+# test data
+VOCtest = SingleClassDetection(class_name, 'val')
+test_loader = torch.utils.data.DataLoader(VOCtest, 
+    batch_size=1, collate_fn=default_collate)
 
 def localize(state, net):
     n_actions = 0
@@ -34,7 +52,7 @@ def recall(net):
     return recall, actions_hist
 
 if __name__ == "__main__":
-    model_path = "plane_models"
+    model_path = "models/" + class_name
     recalls = []
     mean_actions = []
     n_models = len(os.listdir(model_path))
@@ -47,13 +65,10 @@ if __name__ == "__main__":
         recalls.append(r)
         mean_actions.append(np.mean(ah))
     recalls = np.asarray(recalls)
-    mean_actions[np.isnan(mean_actions)] = np.inf
-    recalls = np.concatenate((np.zeros(4), recalls))
-    np.savez("recall_planes.npz", recalls=recalls, mean_actions=mean_actions)
-    #plt.plot(recall)
-    #plt.xlabel("epoch")
-    #plt.ylabel("Recall with IoU threshold 0.50")
-    #plt.title("Precision and Recall Per Epoch")
-    #plt.legend(labels = ["Precision", "Recall"])
-    #plt.savefig(os.path.join("plots", "precision_recall.png"), bbox_inches="tight")
-    #plt.clf()
+    np.savez("recall_{}.npz".format(class_name), recalls=recalls, mean_actions=mean_actions)
+    plt.plot(recall)
+    plt.xlabel("epoch")
+    plt.ylabel("Recall with IoU threshold 0.50")
+    plt.title("Recall per epoch for {} data".format(class_name))
+    plt.savefig(os.path.join("plots", "recall_{}.png".format(class_name)), bbox_inches="tight")
+    plt.clf()

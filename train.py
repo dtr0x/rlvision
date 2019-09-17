@@ -17,8 +17,9 @@ try:
     class_name = sys.argv[1]
     if class_name not in voc_classes.keys():
         raise IndexError()
+    MODEL_PATH = "models/" + class_name
     try:
-        os.mkdir("models/" + class_name)
+        os.mkdir(MODEL_PATH)
     except FileExistsError:
         pass
 except IndexError:
@@ -37,8 +38,15 @@ TARGET_UPDATE = 10
 
 eps_sched = np.linspace(EPS_START, EPS_END, EPS_LEN)
 
-# networks
-policy_net = DQN().to(device)
+# get checkpoint to start training at last model
+n_models = len(os.listdir(MODEL_PATH))
+if n_models > 0:
+    last_model = os.path.join(MODEL_PATH, 
+        "target_net_{}.pt".format(n_models - 1))
+    policy_net = torch.load(last_model).to(device)
+else:
+    policy_net = DQN().to(device)
+
 target_net = DQN().to(device)
 target_net.load_state_dict(policy_net.state_dict())
 target_net.eval()
@@ -78,7 +86,7 @@ train_loader = torch.utils.data.DataLoader(VOCtrain,
 
 total_time = 0
 epoch_time = []
-for i_epoch in range(NUM_EPOCHS):
+for i_epoch in range(n_models, NUM_EPOCHS):
     epoch_start = time.time()
     if i_epoch < EPS_LEN:
         eps = eps_sched[i_epoch]
@@ -121,5 +129,5 @@ for i_epoch in range(NUM_EPOCHS):
 
     # save model after each epoch
     torch.save(target_net, 
-        "models/" + class_name + "/target_net_{}.pt".format(i_epoch))
-np.save(class_name + "_epoch_time", epoch_time)
+        MODEL_PATH + "/target_net_{}.pt".format(i_epoch))
+#np.save(class_name + "_epoch_time", epoch_time)
