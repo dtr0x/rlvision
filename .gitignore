@@ -3,6 +3,8 @@ __pycache__/
 visualization/
 models
 plots
+slurm*
 *.out 
 *.png 
 *.npz
+.torch

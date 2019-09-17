@@ -17,7 +17,10 @@ try:
     class_name = sys.argv[1]
     if class_name not in voc_classes.keys():
         raise IndexError()
-    os.mkdir("models/" + class_name)
+    try:
+        os.mkdir("models/" + class_name)
+    except FileExistsError:
+        pass
 except IndexError:
     print("Must provide class name from one of:")
     print("\n".join(voc_classes.keys()))
@@ -119,4 +122,4 @@ for i_epoch in range(NUM_EPOCHS):
     # save model after each epoch
     torch.save(target_net, 
         "models/" + class_name + "/target_net_{}.pt".format(i_epoch))
-np.save(epoch_time, class_name + "_epoch_time")
+np.save(class_name + "_epoch_time", epoch_time)
