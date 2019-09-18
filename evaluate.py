@@ -23,6 +23,7 @@ except IndexError:
 
 # test data
 VOCtest = SingleClassDetection(class_name, 'val')
+print("Test set size: {}".format(len(VOCtest)))
 test_loader = torch.utils.data.DataLoader(VOCtest, 
     batch_size=1, collate_fn=default_collate)
 
@@ -56,7 +57,9 @@ if __name__ == "__main__":
     model_path = "models/" + class_name
     recalls = []
     mean_actions = []
+    median_actions = []
     n_models = len(os.listdir(model_path))
+
     for i in range(n_models):
         print("Evaluating model {}...".format(i))
         model = os.path.join(model_path, "target_net_{}.pt".format(i))
@@ -65,13 +68,29 @@ if __name__ == "__main__":
         r, ah = recall(net)
         recalls.append(r)
         mean_actions.append(np.mean(ah))
+        median_actions.append(np.median(ah))
+
     recalls = np.asarray(recalls)
-    np.savez("recall_{}.npz".format(class_name), recalls=recalls, mean_actions=mean_actions)
-    plt.plot(recall)
+    np.savez("evaluation/eval_{}.npz".format(class_name), 
+        recalls=recalls, mean_actions=mean_actions, median_actions=median_actions)
+
+    end = time.time()
+    print("Completed evaluation of {0} in {1} seconds.".format(class_name, end-start))
+
+    # plot recall
+    plt.plot(recalls)
     plt.xlabel("epoch")
     plt.ylabel("Recall with IoU threshold 0.50")
     plt.title("Recall per epoch for {} data".format(class_name))
-    plt.savefig(os.path.join("plots", "recall_{}.png".format(class_name)), bbox_inches="tight")
+    plt.savefig("evaluation/recall_{}.png".format(class_name), bbox_inches="tight")
     plt.clf()
-    end = time.time()
-    print("Completed evaluation of {0} in {1} seconds.".format(class_name, end-start))
+
+    # plot actions
+    plt.plot(mean_actions)
+    plt.plot(median_actions)
+    plt.xlabel("epoch")
+    plt.ylabel("actions")
+    plt.title("Number of actions during successful localization of {} class".format(class_name))
+    plt.legend(labels = ["mean actions", "median actions"])
+    plt.savefig("evaluation/actions_{}.png".format(class_name), bbox_inches="tight")
+    plt.clf()
