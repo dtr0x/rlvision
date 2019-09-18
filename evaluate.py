@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from dataloader import *
 from reinforcement import take_action, calculate_iou
 from SingleClassDetection import *
-import os, sys
+import os, sys, time
 
 voc_classes = {}
 f = open("voc_classes.txt", "r")
@@ -52,6 +52,7 @@ def recall(net):
     return recall, actions_hist
 
 if __name__ == "__main__":
+    start = time.time()
     model_path = "models/" + class_name
     recalls = []
     mean_actions = []
@@ -72,3 +73,5 @@ if __name__ == "__main__":
     plt.title("Recall per epoch for {} data".format(class_name))
     plt.savefig(os.path.join("plots", "recall_{}.png".format(class_name)), bbox_inches="tight")
     plt.clf()
+    end = time.time()
+    print("Completed evaluation of {0} in {1} seconds.".format(class_name, end-start))
