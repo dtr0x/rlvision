@@ -55,6 +55,7 @@ def recall(net):
 if __name__ == "__main__":
     start = time.time()
     model_path = "models/" + class_name
+    save_path = "evaluation/" + class_name
     recalls = []
     mean_actions = []
     median_actions = []
@@ -71,7 +72,7 @@ if __name__ == "__main__":
         median_actions.append(np.median(ah))
 
     recalls = np.asarray(recalls)
-    np.savez("evaluation/eval_{}.npz".format(class_name), 
+    np.savez(os.path.join(save_path, "data"), 
         recalls=recalls, mean_actions=mean_actions, median_actions=median_actions)
 
     end = time.time()
@@ -82,7 +83,7 @@ if __name__ == "__main__":
     plt.xlabel("epoch")
     plt.ylabel("Recall with IoU threshold 0.50")
     plt.title("Recall per epoch for {} data".format(class_name))
-    plt.savefig("evaluation/recall_{}.png".format(class_name), bbox_inches="tight")
+    plt.savefig(os.path.join(save_path, "recall.png"), bbox_inches="tight")
     plt.clf()
 
     # plot actions
@@ -92,5 +93,5 @@ if __name__ == "__main__":
     plt.ylabel("actions")
     plt.title("Number of actions during successful localization of {} class".format(class_name))
     plt.legend(labels = ["mean actions", "median actions"])
-    plt.savefig("evaluation/actions_{}.png".format(class_name), bbox_inches="tight")
+    plt.savefig(os.path.join(save_path, "actions.png"), bbox_inches="tight")
     plt.clf()
