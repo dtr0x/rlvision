@@ -16,6 +16,6 @@ pip install torch==1.2.0
 pip install https://github.com/pytorch/vision/archive/v0.4.0.tar.gz
 python -c "import torch, torchvision; print(torch.__version__, torchvision.__version__)"
  
-mkdir -p evaluation/${class_name}
+mkdir -p evaluation/${class_name}/success evaluation/${class_name}/failure
 
 python evaluate.py ${class_name}

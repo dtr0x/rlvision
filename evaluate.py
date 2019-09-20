@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from dataloader import *
 from reinforcement import take_action, calculate_iou
 from SingleClassDetection import *
+from visualization import draw_localization_actions
 import os, sys, time
 
 voc_classes = {}
@@ -37,8 +38,8 @@ def localize(state, net):
         reward, state, done = take_action(state, action)
         n_actions += 1 
         if done:
-            iou = calculate_iou(state)
             break
+    iou = calculate_iou(state)
     return n_actions, iou
 
 def recall(net):
@@ -46,7 +47,7 @@ def recall(net):
     actions_hist = []
     for i, [s] in enumerate(test_loader):
         n_actions, iou = localize(s, net)
-        if iou is not None and iou >= 0.5:
+        if iou >= 0.5:
             tp += 1
             actions_hist.append(n_actions)
     recall = tp/len(VOCtest) # all training examples have a detectable object
@@ -95,3 +96,43 @@ if __name__ == "__main__":
     plt.legend(labels = ["mean actions", "median actions"])
     plt.savefig(os.path.join(save_path, "actions.png"), bbox_inches="tight")
     plt.clf()
+
+    # load best model and localize test images
+    best_model_idx = np.argmax(recalls)
+    best_model = torch.load(os.path.join(model_path, 
+        "target_net_{}.pt".format(best_model_idx))).to(device)
+    
+    success_path = os.path.join(save_path, "success")
+    failure_path = os.path.join(save_path, "failure")
+    
+    max_actions = 100
+    n_success_actions = []
+    
+    for i, [s] in enumerate(test_loader):
+        vis, action_sequence, iou = draw_localization_actions(s, max_actions, best_model)
+        actions_taken = len(action_sequence)
+        if actions_taken == max_actions:
+            print("Could not localize item {}.".format(i))
+            vis.save(os.path.join(failure_path, "{}.png".format(i)))
+        if iou < 0.5:
+            print("Localization for item {} failed with IOU < 0.5.".format(i))
+            vis.save(os.path.join(failure_path, "{}.png".format(i)))
+        else:
+            vis.save(os.path.join(success_path, "{}.png".format(i)))
+            print("Localized item {} in {} actions.".format(i, actions_taken))
+            n_success_actions.append(actions_taken)
+    
+    print("Successfully localized {0} of {1} items with {2:.2f} average number of actions taken."
+        .format(len(n_success_actions), len(VOCtest), np.mean(n_success_actions)))
+    
+    # best model actions histogram
+    plt.hist(n_success_actions, bins=range(max_actions), edgecolor='black', linewidth=1)
+    plt.savefig(os.path.join(save_path, "best_model_actions_hist.png"))
+    plt.xlabel("Number of actions")
+    plt.ylabel("Frequency")
+    plt.text(0.4, 0.75, 
+        "{0} of{1} items successfully localized\nwith {2:.2f} average number of actions"
+        .format(len(n_success_actions), len(VOCtest), np.mean(n_success_actions)),
+        transform=plt.gca().transAxes)
+    plt.title("Number of Actions Taken On Test Images (Epoch {})".format(best_model_idx))
+    plt.savefig(os.path.join(save_path, "best_model_actions_hist.png"))
