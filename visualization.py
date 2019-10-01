@@ -1,6 +1,6 @@
 from PIL import Image, ImageDraw
 from dataloader import state_transform
-from reinforcement import take_action, calculate_iou, find_positive_actions
+from reinforcement import *
 import math
 
 MAX_IMAGE_WIDTH = math.sqrt(2*Image.MAX_IMAGE_PIXELS)
@@ -16,6 +16,18 @@ def draw_boxes(state):
     bbt = adjust_bbox_for_draw(state.bbox_true)
     draw.rectangle(bbo, outline=(0,255,255))
     draw.rectangle(bbt, outline=(255,0,255))
+    return(image)
+
+def draw_boxes_conf(state, classifier):
+    image = state.image.copy()
+    draw = ImageDraw.Draw(image)
+    bbo = adjust_bbox_for_draw(state.bbox_observed)
+    bbt = adjust_bbox_for_draw(state.bbox_true)
+    draw.rectangle(bbo, outline=(0,255,255))
+    draw.rectangle(bbt, outline=(255,0,255))
+    class_score = calculate_conf(state, classifier)
+    draw.text((0, 0), 
+        class_score[0] + ": {:.2f}".format(class_score[1]), (255,0,0))
     return(image)
 
 def localize(state, img_name, net):
@@ -53,6 +65,30 @@ def draw_localization_actions(state, max_n_actions, net):
         vis_new = Image.new('RGB', (vis.width + w, h))
         vis_new.paste(vis)
         last_action_image = draw_boxes(state)
+        vis_new.paste(last_action_image, (vis.width, 0))
+        vis = vis_new
+        if done:
+            break
+    iou = calculate_iou(state)
+    if vis.width > MAX_IMAGE_WIDTH:
+        vis = last_action_image
+    return vis, action_sequence, iou
+
+def draw_sequence_with_conf_score(state, max_n_actions, net, classifier):
+    action_sequence = []
+    vis = draw_boxes_conf(state, classifier)
+    last_action_image = vis
+    w = state.image.width
+    h = state.image.height
+    done = False
+    for i in range(max_n_actions):
+        img_t, action_history = state_transform([state])
+        action = net(img_t, action_history).max(1).indices[0].item()
+        action_sequence.append(action)
+        reward, state, done = take_action(state, action)
+        vis_new = Image.new('RGB', (vis.width + w, h))
+        vis_new.paste(vis)
+        last_action_image = draw_boxes_conf(state, classifier)
         vis_new.paste(last_action_image, (vis.width, 0))
         vis = vis_new
         if done:

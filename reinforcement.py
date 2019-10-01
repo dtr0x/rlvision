@@ -1,8 +1,16 @@
 import torch
 import numpy as np
 import cv2
-from dataloader import State
+from dataloader import *
 import math
+
+imagenet_classes = eval(open("imagenet_classes.txt").read())
+
+def calculate_conf(state, classifier):
+    img_observed = state.image.crop(state.bbox_observed)
+    img_t = transform(img_observed).unsqueeze(0).to(device)
+    class_scores = torch.nn.functional.softmax(classifier(img_t), dim=1)
+    return imagenet_classes[class_scores.argmax().item()], class_scores.max().item()
 
 def calculate_iou(state):
     image, bbox_observed, bbox_true, action_history = state

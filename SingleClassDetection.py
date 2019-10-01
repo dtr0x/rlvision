@@ -2,17 +2,27 @@ from torch.utils.data import Dataset
 import torchvision
 
 class SingleClassDetection(Dataset):
-    def __init__(self, class_name, mode='train'):
+    def __init__(self, class_name, mode='train', target_percent_of_image=1):
         super(SingleClassDetection, self).__init__()
         VOC = torchvision.datasets.VOCDetection("VOC2012", image_set=mode)
         self.data = []
         for item in VOC:
-            obj = item[1]['annotation']['object']
-            if not isinstance(obj, list):
-                if obj['name'] == class_name:
-                    self.data.append(item)
-                elif class_name == 'all':
-                    self.data.append(item)
+            idat = item[1]['annotation']
+            if not isinstance(idat['object'], list):
+                if idat['object']['name'] == class_name:
+                    w_img = int(idat['size']['width'])
+                    h_img = int(idat['size']['height'])
+                    area_img = w_img * h_img
+                    bbox = idat['object']['bndbox']
+                    left = int(bbox['xmin'])
+                    upper = int(bbox['ymin'])
+                    right = int(bbox['xmax'])
+                    lower = int(bbox['ymax'])
+                    w_box = right - left
+                    h_box = lower - upper
+                    area_box = w_box * h_box
+                    if area_box/area_img <= target_percent_of_image:
+                        self.data.append(item)
 
     def __getitem__(self, index):
         return self.data[index]
