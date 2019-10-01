@@ -1,7 +1,7 @@
 VOC2012/
 __pycache__/
 visualization/
-models
+models*
 plots
 slurm*
 *.out 

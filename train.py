@@ -4,7 +4,7 @@ from dataloader import *
 from reinforcement import *
 from visualization import *
 from SingleClassDetection import *
-import os, sys, time, math, random
+import os, sys, time, math, random, numpy as np
 
 voc_classes = {}
 f = open("voc_classes.txt", "r")

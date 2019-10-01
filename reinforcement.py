@@ -1,28 +1,17 @@
-import torch
-import numpy as np
+import torch, torchvision
 import cv2
-from dataloader import State
+from dataloader import *
 import math
+from numpy import argmax
 
-def calculate_iou(state):
-    image, bbox_observed, bbox_true, action_history = state
+classifier = torchvision.models.resnet50(pretrained=True)#.to(device)
+classifier.eval()
 
-    img_mask = np.zeros((image.height, image.width))
-    gt_mask = np.zeros((image.height, image.width))
-
-    x1, y1, x2, y2 = bbox_observed
-    img_mask[y1:y2, x1:x2] = 1.0
-
-    x1, y1, x2, y2 = bbox_true
-    gt_mask[y1:y2, x1:x2] = 1.0
-
-    img_and = cv2.bitwise_and(img_mask, gt_mask)
-    img_or = cv2.bitwise_or(img_mask, gt_mask)
-    j = np.count_nonzero(img_and)
-    i = np.count_nonzero(img_or)
-    iou = float(float(j)/float(i))
-    
-    return iou
+def calculate_conf(state):
+    img_observed = state.image.crop(state.bbox_observed)
+    img_t = transform(img_observed).unsqueeze(0)#.to(device)
+    class_scores = torch.nn.functional.softmax(classifier(img_t), dim=1)
+    return class_scores.max()
 
 def update_action_history(action_history, action):
     action_history_new = action_history.clone()
@@ -80,16 +69,16 @@ def take_action(state, action):
     action_history_new = update_action_history(action_history, action)
     next_state = State(image, bbox_observed_new, bbox_true, action_history_new)
     
-    iou_old = calculate_iou(state)
-    iou_new = calculate_iou(next_state)
+    conf_old = calculate_conf(state)
+    conf_new = calculate_conf(next_state)
        
     if done:
-        if iou_new >= 0.6:
+        if conf_new >= 0.8:
             reward = 3.0
         else:
             reward = -3.0
     else:
-        reward = np.sign(iou_new - iou_old)
+        reward = torch.sign(conf_new - conf_old)
         
     return reward, next_state, done
 
@@ -101,13 +90,14 @@ def find_positive_actions(state):
             positive_actions.append(i)
     return positive_actions
 
-def find_best_actions(state):
-    iou_diff = []
-    if calculate_iou(state) >= 0.6:
-        return [8]
+def find_best_action(state):
+    confs = []
+    if calculate_conf(state) >= 0.8:
+        return 8
     for i in range(8):
         reward, next_state, done = take_action(state, i)
-        iou_old = calculate_iou(state)
-        iou_new = calculate_iou(next_state)
-        iou_diff.append(iou_new - iou_old)
-    return np.argwhere(iou_diff == np.max(iou_diff)).flatten().tolist()
+        confs.append(calculate_conf(next_state))
+    best_next_state_conf = argmax(confs)
+    if calculate_conf(state) > best_next_state_conf:
+        return None
+    return best_next_state_conf

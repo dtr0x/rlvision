@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from dataloader import *
-from reinforcement import take_action, calculate_iou
+from reinforcement import *
 from SingleClassDetection import *
 from visualization import draw_localization_actions
 import os, sys, time
@@ -30,7 +30,6 @@ test_loader = torch.utils.data.DataLoader(VOCtest,
 
 def localize(state, net):
     n_actions = 0
-    iou = None
     done = False
     for i in range(100):
         img_t, action_history = state_transform([state])
@@ -39,15 +38,15 @@ def localize(state, net):
         n_actions += 1 
         if done:
             break
-    iou = calculate_iou(state)
-    return n_actions, iou
+    conf = calculate_conf(state)
+    return n_actions, conf
 
 def recall(net):
     tp = 0
     actions_hist = []
     for i, [s] in enumerate(test_loader):
-        n_actions, iou = localize(s, net)
-        if iou >= 0.5:
+        n_actions, conf = localize(s, net)
+        if conf >= 0.8:
             tp += 1
             actions_hist.append(n_actions)
     recall = tp/len(VOCtest) # all training examples have a detectable object
@@ -82,7 +81,7 @@ if __name__ == "__main__":
     # plot recall
     plt.plot(recalls)
     plt.xlabel("epoch")
-    plt.ylabel("Recall with IoU threshold 0.50")
+    plt.ylabel("Recall with confidence threshold 0.80")
     plt.title("Recall per epoch for {} data".format(class_name))
     plt.savefig(os.path.join(save_path, "recall.png"), bbox_inches="tight")
     plt.clf()
@@ -109,13 +108,13 @@ if __name__ == "__main__":
     n_success_actions = []
     
     for i, [s] in enumerate(test_loader):
-        vis, action_sequence, iou = draw_localization_actions(s, max_actions, best_model)
+        vis, action_sequence, conf = draw_localization_actions(s, max_actions, best_model)
         actions_taken = len(action_sequence)
         if actions_taken == max_actions:
             print("Could not localize item {}.".format(i))
             vis.save(os.path.join(failure_path, "{}.png".format(i)))
-        if iou < 0.5:
-            print("Localization for item {} failed with IOU < 0.5.".format(i))
+        if conf < 0.8:
+            print("Localization for item {} failed with confidence < 0.8.".format(i))
             vis.save(os.path.join(failure_path, "{}.png".format(i)))
         else:
             vis.save(os.path.join(success_path, "{}.png".format(i)))
