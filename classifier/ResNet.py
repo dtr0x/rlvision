@@ -131,7 +131,7 @@ class ResNet(torch.nn.Module):
         x = self.pool_avg(x)
         x = x.squeeze()
         x = self.fc1(x)
-        x = F.softmax(x, dim=1)
+        x = F.softmax(x)
 
         return x
 

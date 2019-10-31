@@ -38,7 +38,7 @@ def optimize_model(optimizer, memory, policy_net, target_net, batch_size, gamma)
     batch = Transition(*zip(*transitions))
     
     non_final_mask = torch.tensor(tuple(map(lambda s: get_last_action(s) != 8,
-                                          batch.next_state)), device=device, dtype=torch.uint8)
+                                          batch.next_state)), device=device, dtype=torch.bool)
     non_final_next_states = [s for s in batch.next_state if get_last_action(s) != 8]
     non_final_img_t, non_final_action_history = state_transform(non_final_next_states)
     

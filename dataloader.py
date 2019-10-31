@@ -5,24 +5,15 @@ from torchvision import transforms
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 State = namedtuple('State',
-                        ('image', 'bbox_observed', 'bbox_true', 'action_history'))
+                        ('image', 'bbox', 'action_history'))
 
 def default_collate(batch):
     states = []
     for item in batch:
         image = item[0]
         action_history = torch.zeros(90)
-        w = int(item[1]['annotation']['size']['width'])
-        h = int(item[1]['annotation']['size']['height'])
-        bbox_observed = (0, 0, w, h)
-        obj = item[1]['annotation']['object']
-        bbox = obj['bndbox']
-        left = int(bbox['xmin'])
-        upper = int(bbox['ymin'])
-        right = int(bbox['xmax'])
-        lower = int(bbox['ymax'])
-        bbox_true = (left, upper, right, lower)
-        states.append(State(image, bbox_observed, bbox_true, action_history))
+        bbox = (0, 0, image.width, image.height)
+        states.append(State(image, bbox, action_history))
     return states
 
 transform = transforms.Compose([
@@ -35,7 +26,7 @@ transform = transforms.Compose([
 
 def state_transform(states):
     # return the transformed images and action_history for each state
-    img_observed = [state.image.crop(state.bbox_observed) for state in states]
+    img_observed = [state.image.crop(state.bbox) for state in states]
     img_t = torch.stack([transform(img) for img in img_observed]).to(device)
     action_history = torch.stack([state.action_history for state in states]).to(device)
     return img_t, action_history

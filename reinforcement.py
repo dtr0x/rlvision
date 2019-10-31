@@ -3,14 +3,17 @@ import cv2
 from dataloader import *
 import math
 from numpy import argmax
+from classifier.ResNet import ResNet
 
-classifier = torchvision.models.resnet50(pretrained=True)#.to(device)
+# load the pre-trained classifier (trained on imagenet)
+classifier = ResNet().to(device)
+classifier.load_state_dict(torch.load("classifier/init_model.pth"))
 classifier.eval()
 
 def calculate_conf(state):
-    img_observed = state.image.crop(state.bbox_observed)
-    img_t = transform(img_observed).unsqueeze(0)#.to(device)
-    class_scores = torch.nn.functional.softmax(classifier(img_t), dim=1)
+    img_observed = state.image.crop(state.bbox)
+    img_t = transform(img_observed).unsqueeze(0).to(device)
+    class_scores = classifier(img_t)
     return class_scores.max()
 
 def update_action_history(action_history, action):
@@ -27,8 +30,8 @@ def update_action_history(action_history, action):
     return action_history_new
  
 def take_action(state, action):
-    image, bbox_observed, bbox_true, action_history = state        
-    x1, y1, x2, y2 = bbox_observed
+    image, bbox, action_history = state        
+    x1, y1, x2, y2 = bbox
     alph_w = int(0.2 * (x2 - x1))
     alph_h = int(0.2 * (y2 - y1))
     
@@ -65,15 +68,15 @@ def take_action(state, action):
     elif action == 8: #trigger
         done = True
         
-    bbox_observed_new = (x1, y1, x2, y2)
+    bbox_new = (x1, y1, x2, y2)
     action_history_new = update_action_history(action_history, action)
-    next_state = State(image, bbox_observed_new, bbox_true, action_history_new)
+    next_state = State(image, bbox_new, action_history_new)
     
     conf_old = calculate_conf(state)
     conf_new = calculate_conf(next_state)
        
     if done:
-        if conf_new >= 0.8:
+        if conf_new >= 0.9:
             reward = 3.0
         else:
             reward = -3.0
@@ -92,7 +95,7 @@ def find_positive_actions(state):
 
 def find_best_action(state):
     confs = []
-    if calculate_conf(state) >= 0.8:
+    if calculate_conf(state) >= 0.9:
         return 8
     for i in range(8):
         reward, next_state, done = take_action(state, i)

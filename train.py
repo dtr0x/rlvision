@@ -2,53 +2,23 @@ from dqn import *
 from optimization import *
 from dataloader import *
 from reinforcement import *
-from visualization import *
-from SingleClassDetection import *
 import os, sys, time, math, random, numpy as np
 
-voc_classes = {}
-f = open("voc_classes.txt", "r")
-lines = f.readlines()
-for l in lines:
-    k,v = l.split(',')
-    voc_classes[k] = int(v)
-
-try:
-    class_name = sys.argv[1]
-    if class_name not in voc_classes.keys():
-        raise IndexError()
-    MODEL_PATH = "models/" + class_name
-    try:
-        os.mkdir(MODEL_PATH)
-    except FileExistsError:
-        pass
-except IndexError:
-    print("Must provide class name from one of:")
-    print("\n".join(voc_classes.keys()))
-    exit()
+MODEL_PATH = "models"
 
 # Hyperparameters / utilities
-BATCH_SIZE = 128
-NUM_EPOCHS = 300
+BATCH_SIZE = 10
+NUM_EPOCHS = 200
 GAMMA = 0.995
 EPS_START = 0.9
 EPS_END = 0.1
-EPS_LEN = 100 # number of epochs to decay epsilon
+EPS_LEN = 50 # number of epochs to decay epsilon
 TARGET_UPDATE = 10
 
 eps_sched = np.linspace(EPS_START, EPS_END, EPS_LEN)
 
-# get checkpoint to start training at last model
-n_models = len(os.listdir(MODEL_PATH))
-if n_models > 0:
-    last_model = os.path.join(MODEL_PATH, 
-        "target_net_{}.pt".format(n_models - 1))
-    policy_net = torch.load(last_model).to(device)
-else:
-    policy_net = DQN().to(device)
-
+policy_net = DQN().to(device)
 target_net = DQN().to(device)
-target_net.load_state_dict(policy_net.state_dict())
 target_net.eval()
 
 def select_action(states, eps):
@@ -80,13 +50,13 @@ optimizer = torch.optim.Adam(policy_net.parameters(), lr=1e-4)
 memory = ReplayMemory(10000)
 
 # training data
-VOCtrain = SingleClassDetection(class_name, 'train')
-train_loader = torch.utils.data.DataLoader(VOCtrain, 
-    batch_size=TARGET_UPDATE, collate_fn=default_collate)
+trainset = torchvision.datasets.ImageFolder("coco_voc_images")
+train_loader = torch.utils.data.DataLoader(trainset, 
+    batch_size=BATCH_SIZE, collate_fn=default_collate)
 
 total_time = 0
 epoch_time = []
-for i_epoch in range(n_models, NUM_EPOCHS):
+for i_epoch in range(NUM_EPOCHS):
     epoch_start = time.time()
     if i_epoch < EPS_LEN:
         eps = eps_sched[i_epoch]
@@ -97,7 +67,7 @@ for i_epoch in range(n_models, NUM_EPOCHS):
         batch_steps = 0
         start = time.time()
         # perform actions on batch items until done
-        while len(states) > 0 and batch_steps < 40:
+        while len(states) > 0 and batch_steps < 100:
             actions = select_action(states, eps)
             states_new = []
             # store state transition for each each (state, action) pair
@@ -127,7 +97,6 @@ for i_epoch in range(n_models, NUM_EPOCHS):
     total_time += t
     print("Total time: {0:.2f} minutes.".format(total_time))
 
-    # save model after each epoch
-    torch.save(target_net, 
-        MODEL_PATH + "/target_net_{}.pt".format(i_epoch))
-#np.save(class_name + "_epoch_time", epoch_time)
+    if (i_epoch+1) % 5 == 0:
+        torch.save(target_net, 
+            MODEL_PATH + "/target_net_{}.pt".format(i_epoch))
