@@ -1,0 +1,26 @@
+n02691156:airplane
+n02690373:airliner
+n02842573:biplane
+n03365231:floatplane
+n03783873:monoplane
+n03798610:multiengine airplane
+n04012084:propeller plane
+n04062644:reconnaissance plane
+n04160586:seaplane
+n04552348:warplane
+n04389999:tanker plane
+
+n02958343:car
+n03770085:minicar
+n03870105:pace car
+n04285008:sports car
+n04459122:touring car
+n04516354:used-car
+n04520170:van
+n04520382:van,caravan
+n02930766:cab,hack,taxi,taxicab
+n02931148:cab
+n03594945:jeep
+n03100240:convertible
+n02814533:beach wagon,station wagon,wagon,estate car,beach waggon,station waggon,waggon
+n03977966:police van,police wagon,paddy wagon,patrol wagon,wagon,black Mari
