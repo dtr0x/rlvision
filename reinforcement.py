@@ -13,8 +13,8 @@ classifier.eval()
 def calculate_conf(state):
     img_observed = state.image.crop(state.bbox)
     img_t = transform(img_observed).unsqueeze(0).to(device)
-    class_scores = classifier(img_t)
-    return class_scores.max()
+    class_score = classifier(img_t)[state.obj_class]
+    return class_score
 
 def update_action_history(action_history, action):
     action_history_new = action_history.clone()
@@ -30,7 +30,7 @@ def update_action_history(action_history, action):
     return action_history_new
  
 def take_action(state, action):
-    image, bbox, action_history = state        
+    image, obj_class, bbox, action_history = state
     x1, y1, x2, y2 = bbox
     alph_w = int(0.2 * (x2 - x1))
     alph_h = int(0.2 * (y2 - y1))
@@ -70,7 +70,7 @@ def take_action(state, action):
         
     bbox_new = (x1, y1, x2, y2)
     action_history_new = update_action_history(action_history, action)
-    next_state = State(image, bbox_new, action_history_new)
+    next_state = State(image, obj_class, bbox_new, action_history_new)
     
     conf_old = calculate_conf(state)
     conf_new = calculate_conf(next_state)
@@ -101,6 +101,6 @@ def find_best_action(state):
         reward, next_state, done = take_action(state, i)
         confs.append(calculate_conf(next_state))
     best_next_state_conf = argmax(confs)
-    if calculate_conf(state) > best_next_state_conf:
+    if calculate_conf(state) > confs[best_next_state_conf]:
         return None
     return best_next_state_conf

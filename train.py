@@ -7,12 +7,12 @@ import os, sys, time, math, random, numpy as np
 MODEL_PATH = "models"
 
 # Hyperparameters / utilities
-BATCH_SIZE = 10
-NUM_EPOCHS = 200
+BATCH_SIZE = 5
+NUM_EPOCHS = 40
 GAMMA = 0.995
 EPS_START = 0.9
 EPS_END = 0.1
-EPS_LEN = 50 # number of epochs to decay epsilon
+EPS_LEN = 20 # number of epochs to decay epsilon
 TARGET_UPDATE = 10
 
 eps_sched = np.linspace(EPS_START, EPS_END, EPS_LEN)
@@ -40,6 +40,7 @@ def select_action(states, eps):
                 action = random.choice(positive_actions)
             else:
                 action = random.randrange(9)
+            #action = random.randrange(9)
             actions.append(action)
         actions = torch.tensor(actions, device=device)
         print("random:", actions)
@@ -52,7 +53,7 @@ memory = ReplayMemory(10000)
 # training data
 trainset = torchvision.datasets.ImageFolder("coco_voc_images")
 train_loader = torch.utils.data.DataLoader(trainset, 
-    batch_size=BATCH_SIZE, collate_fn=default_collate)
+    batch_size=BATCH_SIZE, collate_fn=default_collate, shuffle=True)
 
 total_time = 0
 epoch_time = []
@@ -67,7 +68,7 @@ for i_epoch in range(NUM_EPOCHS):
         batch_steps = 0
         start = time.time()
         # perform actions on batch items until done
-        while len(states) > 0 and batch_steps < 100:
+        while len(states) > 0 and batch_steps < 50:
             actions = select_action(states, eps)
             states_new = []
             # store state transition for each each (state, action) pair
@@ -99,4 +100,4 @@ for i_epoch in range(NUM_EPOCHS):
 
     if (i_epoch+1) % 5 == 0:
         torch.save(target_net, 
-            MODEL_PATH + "/target_net_{}.pt".format(i_epoch))
+            MODEL_PATH + "/target_net_{}.pth".format(i_epoch))

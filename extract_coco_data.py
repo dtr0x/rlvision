@@ -17,7 +17,7 @@ PLANE = 5
 car_imgs = 0
 plane_imgs = 0
 
-IMG_THRESH = 0.7 # maximum classification score for the total image
+IMG_THRESH = 0.9 # maximum classification score for the total image
 OBJ_THRESH = 0.9 # minimum classification score for bounding box object
 
 for img, anns in data:
@@ -28,8 +28,10 @@ for img, anns in data:
     is_plane = (ncars == 0 and nplanes == 1)
     if is_car:
         idx = cat_ids.index(CAR)
+        target = 0
     elif is_plane:
         idx = cat_ids.index(PLANE)
+        target = 1
     if is_car or is_plane:
         ann = anns[idx]
         bbox = [int(coord) for coord in ann['bbox']]
@@ -39,9 +41,12 @@ for img, anns in data:
         h = bbox[3]
         bbox = (x1, y1, x1+w, y1+h)
         img_gt = img.crop(bbox)
-        img_score = classifier(transform(img).unsqueeze(0).to(device)).max().item()
-        class_score = classifier(transform(img_gt).unsqueeze(0).to(device)).max().item()
-        if img_score <= IMG_THRESH and class_score >= OBJ_THRESH:
+        img_out = classifier(transform(img).unsqueeze(0).to(device))
+        img_gt_out = classifier(transform(img_gt).unsqueeze(0).to(device))
+        img_score = img_out[target].item()
+        img_gt_score = img_gt_out[target].item()
+        if img_score < IMG_THRESH and img_gt_score >= OBJ_THRESH:
+            print(target, img_out, img_gt_out)
             if is_car:
                 car_imgs += 1
                 img.save("coco_voc_images/car/{}.jpg".format(ann['id']))

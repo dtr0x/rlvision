@@ -5,15 +5,14 @@ from torchvision import transforms
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 State = namedtuple('State',
-                        ('image', 'bbox', 'action_history'))
+                        ('image', 'obj_class', 'bbox', 'action_history'))
 
 def default_collate(batch):
     states = []
-    for item in batch:
-        image = item[0]
+    for image, obj_class in batch:
         action_history = torch.zeros(90)
         bbox = (0, 0, image.width, image.height)
-        states.append(State(image, bbox, action_history))
+        states.append(State(image, obj_class, bbox, action_history))
     return states
 
 transform = transforms.Compose([
