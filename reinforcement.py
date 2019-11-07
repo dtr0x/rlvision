@@ -5,6 +5,8 @@ import math
 from numpy import argmax
 from classifier.ResNet import ResNet
 
+CONFIDENCE_THRESHOLD = 0.8
+
 # load the pre-trained classifier (trained on imagenet)
 classifier = ResNet().to(device)
 classifier.load_state_dict(torch.load("classifier/init_model.pth"))
@@ -76,7 +78,7 @@ def take_action(state, action):
     conf_new = calculate_conf(next_state)
        
     if done:
-        if conf_new >= 0.9:
+        if conf_new >= CONFIDENCE_THRESHOLD:
             reward = 3.0
         else:
             reward = -3.0
@@ -95,12 +97,13 @@ def find_positive_actions(state):
 
 def find_best_action(state):
     confs = []
-    if calculate_conf(state) >= 0.9:
+    if calculate_conf(state) >= CONFIDENCE_THRESHOLD:
         return 8
     for i in range(8):
         reward, next_state, done = take_action(state, i)
         confs.append(calculate_conf(next_state))
     best_next_state_conf = argmax(confs)
+    #print([a.item() for a in confs])
     if calculate_conf(state) > confs[best_next_state_conf]:
         return None
     return best_next_state_conf

@@ -7,13 +7,12 @@ import os, sys, time, math, random, numpy as np
 MODEL_PATH = "models"
 
 # Hyperparameters / utilities
-BATCH_SIZE = 5
-NUM_EPOCHS = 40
+BATCH_SIZE = 10
+NUM_EPOCHS = 100
 GAMMA = 0.995
-EPS_START = 0.9
+EPS_START = 1
 EPS_END = 0.1
-EPS_LEN = 20 # number of epochs to decay epsilon
-TARGET_UPDATE = 10
+EPS_LEN = 25 # number of epochs to decay epsilon
 
 eps_sched = np.linspace(EPS_START, EPS_END, EPS_LEN)
 
@@ -40,7 +39,6 @@ def select_action(states, eps):
                 action = random.choice(positive_actions)
             else:
                 action = random.randrange(9)
-            #action = random.randrange(9)
             actions.append(action)
         actions = torch.tensor(actions, device=device)
         print("random:", actions)
@@ -68,7 +66,7 @@ for i_epoch in range(NUM_EPOCHS):
         batch_steps = 0
         start = time.time()
         # perform actions on batch items until done
-        while len(states) > 0 and batch_steps < 50:
+        while len(states) > 0 and batch_steps < 40:
             actions = select_action(states, eps)
             states_new = []
             # store state transition for each each (state, action) pair

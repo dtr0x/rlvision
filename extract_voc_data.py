@@ -46,7 +46,6 @@ def parse_data(year):
             img_score = img_out[target].item()
             img_gt_score = img_gt_out[target].item()
             if img_score < IMG_THRESH and img_gt_score >= OBJ_THRESH:
-                print(target, img_out, img_gt_out)
                 if is_car:
                     car_imgs += 1
                     img.save("coco_voc_images/car/{}".format(filename))
