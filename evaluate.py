@@ -6,6 +6,10 @@ from SingleClassDetection import *
 from visualization import draw_localization_actions
 import os, sys, time
 
+# Evaluation script for trained models
+# TODO: review code and modify for confidence-based detection
+#       add more informative metric for object detection (mean average precision)
+
 voc_classes = {}
 f = open("voc_classes.txt", "r")
 lines = f.readlines()

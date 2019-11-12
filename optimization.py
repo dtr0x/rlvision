@@ -1,10 +1,11 @@
 import torch
 import torch.nn.functional as F
 from collections import namedtuple
-from dataloader import state_transform
+from dataloader import *
 import random
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# State transition, replay memory, and optimization for DQN training
+# Adapted from https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html
 
 Transition = namedtuple('Transition',
                         ('state', 'action', 'next_state', 'reward'))

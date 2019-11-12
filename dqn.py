@@ -9,8 +9,10 @@ class DQN(nn.Module):
         
         # pre-trained convolutional network
         conv = torchvision.models.resnet50(pretrained=True)
+        # remove the last last layer to extract features
         modules = list(conv.children())[:-1]
         self.conv = nn.Sequential(*modules)
+        # don't perform gradient descent through the classifier 
         for p in conv.parameters():
             p.requires_grad = False
             
@@ -24,6 +26,7 @@ class DQN(nn.Module):
             nn.Softmax(dim=1)
         )
         
+    # forward pass through the network    
     def forward(self, img_t, action_history):
         out = self.conv(img_t)
         out = out.reshape(out.size(0), 2048)

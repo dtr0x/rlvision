@@ -16,7 +16,8 @@ from torch.autograd import Variable
 from torchvision.transforms import ToPILImage
 from IPython.display import Image
 from ResNet import *
-to_img = ToPILImage()
+
+# Train a binary classifier on plane and car images
 
 BATCH_SIZE = 32
 
@@ -40,7 +41,6 @@ validation_dataloaders = torch.utils.data.DataLoader(valid_datasets, batch_size=
 
 n_epochs = 100
 cnn = ResNet().to(device)
-print(device)
 training_loss_per_epoch,validation_loss_per_epoch,training_error_per_epoch,valid_error_per_epoch = cnn.train_model(train_dataloaders, validation_dataloaders,num_epochs = n_epochs)
     
 epoch_range = list(range(n_epochs))

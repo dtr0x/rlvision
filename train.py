@@ -2,23 +2,27 @@ from dqn import *
 from optimization import *
 from dataloader import *
 from reinforcement import *
-import os, sys, time, math, random, numpy as np
+import numpy as np
+import os, sys, time, math, random
+
+# Main training script
 
 MODEL_PATH = "models"
 
 # Hyperparameters / utilities
 BATCH_SIZE = 10
 NUM_EPOCHS = 100
-GAMMA = 0.995
-EPS_START = 1
-EPS_END = 0.1
+GAMMA = 0.995 # discount factor
+EPS_START = 0.95
+EPS_END = 0.1 
 EPS_LEN = 25 # number of epochs to decay epsilon
 
+# linear annealing of epsilon
 eps_sched = np.linspace(EPS_START, EPS_END, EPS_LEN)
 
 policy_net = DQN().to(device)
 target_net = DQN().to(device)
-target_net.eval()
+target_net.eval()  # no optimization is performed directly on target network
 
 def select_action(states, eps):
     img_t, action_history = state_transform(states)
@@ -96,6 +100,7 @@ for i_epoch in range(NUM_EPOCHS):
     total_time += t
     print("Total time: {0:.2f} minutes.".format(total_time))
 
+    # save the model every 5 epochs
     if (i_epoch+1) % 5 == 0:
         torch.save(target_net, 
             MODEL_PATH + "/target_net_{}.pth".format(i_epoch))
