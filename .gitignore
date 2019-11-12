@@ -9,3 +9,4 @@ classifier/plots
 classifier/models
 classifier/__pycache__
 coco_voc_images
+high-res
