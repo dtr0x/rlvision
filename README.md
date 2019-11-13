@@ -32,9 +32,10 @@ The data file ```data.tar.gz``` contains relevant files for training and testing
 ```python train.py``` will run the training procedure from the terminal. The ```screen``` program in Linux can be used to offload the training script to the background. During training, A deep Q-network (DQN) is optimized over time to determine the best localizing action that can be taken given an image and observable bounding box region. An object localization search is performed on each image in the ```coco_voc_images``` folder, with the RL agent learning to follow improvements in confidence score. A localization for each image is let to run for a maximum of 40 actions. the training is performed for 100 epochs, with a single epoch consisting of a localization search for each image in the dataset. A DQN model is saved every 5 epochs in the ```models``` folder. 
 
 ## Evaluation
-Evaluation of all trained DQNs in the ```models``` folder is performed by evaluating recall, which in this case is the percentage of test images with which a DQN successfully localizes the object. In addition, the best model is selected to produce visualizations of the localization process on the test data. Evaluation is run from the terminal by ```python evaluate.py```.
+Evaluation of all trained DQNs in the ```models``` folder is performed by evaluating recall, which in this case is the percentage of test images with which a DQN successfully localizes the object. In addition, the best model is selected to produce visualizations of the localization process on the test data. Evaluation is run from the terminal by ```python evaluate.py``` and uses functions from ```visualization.py``` to save output to ```visualization``` success and failure folders. 
 
 ## Algorithm Details
+
 
 ## Future Improvements
 - Adding a region proposal step to first roughly detect areas where an object exists
