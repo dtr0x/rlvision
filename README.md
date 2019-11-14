@@ -34,14 +34,15 @@ The data file [data.tar.gz](https://drive.google.com/open?id=1CdHEHihc7rzccHX3PD
 ### Evaluation
 Evaluation of all trained DQNs in the ```models``` folder is performed by evaluating recall, which in this case is the percentage of test images with which a DQN successfully localizes the object. In addition, the best model is selected to produce visualizations of the localization process on the test data. Evaluation is run from the terminal by ```python evaluate.py``` and uses functions from ```visualization.py``` to save output to visualization success and failure folders. 
 
-### Algorithm Details
-
-
 ### Future Improvements
 - Adding a region proposal step to first roughly detect areas where an object exists. This is most likely required for high-resolution images that contain small objects.
 - Train a classifier on more classes to detect more types of objects. This would lead to less false detections and unpredictability of the classifier during search.
 - Manually test the environment, showing the optimal steps that an agent should take. Does there an exist a path to detect the object on all training data, and how well does this generalize. The existance of such cases is crucial to effective training
-- Train classifier and DQN end-to-end rather than using a pretrained classifier 
+- Train classifier and DQN end-to-end rather than using a pretrained classifier
+- Implement more state-of-art RL algorithm for more efficient training and accurate models
+- Move all numeric values to argument list
+- Move all utility functions to util.py
+- Move code in dataloader.py to DataLoader class
 
 
 
