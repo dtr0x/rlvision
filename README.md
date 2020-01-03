@@ -1,4 +1,4 @@
-## Affirmative vision: Using reinforcement learning to improve accuracy in object detection and tracking
+## Using reinforcement learning to improve accuracy in object detection
 
 Preliminary design of a reinforcement learning based object detector. The goal of the learning agent is to detect objects in a high resolution image, and refine its viewing region to improve the accuracy of detection.
 
